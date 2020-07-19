@@ -1,12 +1,38 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const Usuario = require('../models/usuario');
+const _ = require('underscore')
 
+const { verificaToken } = require('../middlewares/autenticacion')
 const app = express();
 
-app.get('/usuario', (req, res) => {
-    //res.send('Hola ');
-    res.json('get usuario');
+app.get('/usuario', verificaToken, (req, res) => {
+
+    let desde = req.query.desde || 0;
+    desde = Number(desde);
+
+    let limite = req.query.limite || 0;
+    limite = Number(limite);
+    //              Filtrar
+    Usuario.find({ estado: true }, 'nombre email role estado')
+        .skip(desde)
+        .limit(limite)
+        .exec((err, usuarios) => {
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            Usuario.count({ estado: true }, (err, conteo) => {
+                res.json({
+                    ok: true,
+                    usuarios,
+                    numero: conteo
+                });
+            });
+        });
 });
 
 app.post('/usuario', (req, res) => {
@@ -36,23 +62,56 @@ app.post('/usuario', (req, res) => {
 app.put('/usuario/:id', (req, res) => {
     //res.send('Hola ');
     let id = req.params.id;
+    let body = _.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado']);
+    //especifico los campos que voy a actualizar
 
-    if (body.nombre === undefined) {
-        res.status(400).json({
-            ok: false,
-            mensaje: 'El nombre es necesario'
-        });
-    } else {
+    //lo que yo no quiero que se actualize elimino 
+    //delete body.password;
+    //delete body.google;
+
+    Usuario.findByIdAndUpdate(id, body, { new: true, runValidators: true, context: 'query' }, (err, usuarioDB) => {
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
         res.json({
-            id
+            ok: true,
+            usuario: usuarioDB
         });
-
-    }
+    });
 });
 
-app.delete('/usuario', (req, res) => {
+app.delete('/usuario/:id', (req, res) => {
     //res.send('Hola ');
-    res.json('delete usuario');
+    let id = req.params.id;
+    let cambiarEstado = {
+            estado: false
+        }
+        //Usuario.findByIdAndDelete(id, (err, usuarioEliminado) => {
+    Usuario.findByIdAndUpdate(id, cambiarEstado, { new: true, runValidators: true, context: 'query' }, (err, usuarioDB) => {
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+        if (!usuarioDB) {
+            res.json({
+                ok: false,
+                err: {
+                    message: "Usuario no encontradado",
+                },
+            });
+        } else {
+            res.json({
+                ok: true,
+                usuario: usuarioDB
+            });
+        }
+
+    });
 });
 
 module.exports = app;

@@ -12,8 +12,8 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
 
-//incluir rutas de /usuario
-app.use(require('./routes/usuario'));
+//incluir configuracion global de las rutas
+app.use(require('./routes/index'));
 
 
 //conexion a la base de dartos
