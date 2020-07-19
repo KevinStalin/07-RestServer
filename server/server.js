@@ -18,7 +18,7 @@ app.use(require('./routes/index'));
 
 //conexion a la base de dartos
 
-mongoose.connect(process.env.urlDB, { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }, (err, res) => {
+mongoose.connect('mongodb+srv://User_DataBase:kevin@pruebamongodb-6oz0y.mongodb.net/cafe', { useCreateIndex: true, useNewUrlParser: true, useUnifiedTopology: true }, (err, res) => {
     if (err) throw err;
     console.log('Base de datos Online!');
 });
